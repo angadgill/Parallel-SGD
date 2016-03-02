@@ -38,6 +38,23 @@ class ParallelSGDRegressor(BaseSGDRegressor):
                                                    warm_start=warm_start,
                                                    average=average)
 
+    def _wrapper(coef, intercept, loss_function,
+                     penalty_type, alpha, C, l1_ratio,
+                     dataset, n_iter, fit_intercept,
+                     verbose, shuffle, seed,
+                     pos_weight, neg_weight,
+                     learning_rate_type, eta0,
+                     power_t, t_, intercept_decay,coefArray,interceptArray):
+        coef,intercept = plain_sgd(coef, intercept, loss_function,
+                                                penalty_type, alpha, C, l1_ratio,
+                                                dataset, n_iter, int(fit_intercept),
+                                                int(verbose), int(shuffle), seed,
+                                                pos_weight, neg_weight,
+                                                learning_rate_type, eta0,
+                                                power_t, t_, intercept_decay)
+        coefArray.append([coef,])
+        interceptArray.append([intercept,])
+
     def parallelizer(self, coef, intercept, loss_function,
                      penalty_type, alpha, C, l1_ratio,
                      dataset, n_iter, fit_intercept,
@@ -74,17 +91,21 @@ class ParallelSGDRegressor(BaseSGDRegressor):
         #           learning_rate_type, eta0,
         #           power_t, t_, intercept_decay)
 
-        for i in range(0,1):
-            p = Process(target=plain_sgd, args=(coef, intercept, loss_function,
-                                            penalty_type, alpha, C, l1_ratio,
-                                            dataset, n_iter, int(fit_intercept),
-                                            int(verbose), int(shuffle), seed,
-                                            pos_weight, neg_weight,
-                                             learning_rate_type, eta0,
-                                            power_t, t_, intercept_decay))
+        coefArray = list()
+        interceptArray = list()
+        for i in range(0, 1):
+            p = Process(target=self._wrapper, args=(coef, intercept, loss_function,
+                                                penalty_type, alpha, C, l1_ratio,
+                                                dataset, n_iter, int(fit_intercept),
+                                                int(verbose), int(shuffle), seed,
+                                                pos_weight, neg_weight,
+                                                learning_rate_type, eta0,
+                                                power_t, t_, intercept_decay,coefArray,interceptArray))
             p.start()
             p.join()
 
+        print(coefArray)
+        print(interceptArray)
         return 0.0, 0.0
 
     # TODO: Update this method to make it parallel
