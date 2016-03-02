@@ -15,7 +15,7 @@ from sklearn.utils import check_random_state
 from sklearn.linear_model.base import make_dataset
 from sklearn.linear_model.sgd_fast import plain_sgd, average_sgd
 
-from multiprocessing import Process
+from multiprocessing import Process,Array
 
 import numpy as np
 
@@ -38,13 +38,14 @@ class ParallelSGDRegressor(BaseSGDRegressor):
                                                    warm_start=warm_start,
                                                    average=average)
 
-    def _wrapper(coef, intercept, loss_function,
+    def _wrapper(self,coef, intercept, loss_function,
                      penalty_type, alpha, C, l1_ratio,
                      dataset, n_iter, fit_intercept,
                      verbose, shuffle, seed,
                      pos_weight, neg_weight,
                      learning_rate_type, eta0,
-                     power_t, t_, intercept_decay,coefArray,interceptArray):
+                     power_t, t_, intercept_decay,coefArray,interceptArray,i):
+	print("Start %s"%i)
         coef,intercept = plain_sgd(coef, intercept, loss_function,
                                                 penalty_type, alpha, C, l1_ratio,
                                                 dataset, n_iter, int(fit_intercept),
@@ -52,8 +53,12 @@ class ParallelSGDRegressor(BaseSGDRegressor):
                                                 pos_weight, neg_weight,
                                                 learning_rate_type, eta0,
                                                 power_t, t_, intercept_decay)
-        coefArray.append([coef,])
-        interceptArray.append([intercept,])
+        print(coef, intercept)
+        coefArray[i] = int(coef[0])
+	coefArray[i+10] =int(coef[1])
+	coefArray[i+20] =int(coef[2])
+        interceptArray[i] = int(intercept)
+	print("End %s"%i)
 
     def parallelizer(self, coef, intercept, loss_function,
                      penalty_type, alpha, C, l1_ratio,
@@ -91,21 +96,25 @@ class ParallelSGDRegressor(BaseSGDRegressor):
         #           learning_rate_type, eta0,
         #           power_t, t_, intercept_decay)
 
-        coefArray = list()
-        interceptArray = list()
-        for i in range(0, 1):
-            p = Process(target=self._wrapper, args=(coef, intercept, loss_function,
+        coefArray = Array('i', range(30))
+        interceptArray = Array('i', range(10))
+	p = []
+
+        for i in range(0, 10):
+            p.insert(0, Process(target=self._wrapper, args=(coef, intercept, loss_function,
                                                 penalty_type, alpha, C, l1_ratio,
                                                 dataset, n_iter, int(fit_intercept),
                                                 int(verbose), int(shuffle), seed,
                                                 pos_weight, neg_weight,
                                                 learning_rate_type, eta0,
-                                                power_t, t_, intercept_decay,coefArray,interceptArray))
-            p.start()
-            p.join()
+                                                power_t, t_, intercept_decay,coefArray,interceptArray,i)))
+            p[0].start()
+        
+	for i in range(0,10):
+	    p[i].join()
 
-        print(coefArray)
-        print(interceptArray)
+        print(coefArray[:])
+        print(interceptArray[:])
         return 0.0, 0.0
 
     # TODO: Update this method to make it parallel
@@ -183,3 +192,4 @@ class ParallelSGDRegressor(BaseSGDRegressor):
             print(self.intercept_)
             self.t_ += n_iter * X.shape[0]
             self.intercept_ = np.atleast_1d(self.intercept_)
+
