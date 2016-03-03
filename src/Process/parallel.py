@@ -46,7 +46,7 @@ DEFAULT_EPSILON = 0.1
 
 # Default value of ``epsilon`` parameter.
 
-def _wrapper(self, coef, intercept, loss_function,
+def _wrapper(coef, intercept, loss_function,
              penalty_type, alpha, C, l1_ratio,
              dataset, n_iter, fit_intercept,
              verbose, shuffle, seed,
