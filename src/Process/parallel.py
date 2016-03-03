@@ -16,7 +16,7 @@ from sklearn.linear_model.base import make_dataset
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.feature_selection.from_model import _LearntSelectorMixin
 from sklearn.utils import (check_array, check_random_state, check_X_y,
-                     deprecated)
+                           deprecated)
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.utils.multiclass import _check_partial_fit_first_call
 from sklearn.utils.validation import check_is_fitted
@@ -34,6 +34,7 @@ from sklearn.linear_model.sgd_fast import Huber
 from sklearn.linear_model.sgd_fast import EpsilonInsensitive
 from sklearn.linear_model.sgd_fast import SquaredEpsilonInsensitive
 
+from multiprocessing import Process,Array
 
 LEARNING_RATE_TYPES = {"constant": 1, "optimal": 2, "invscaling": 3,
                        "pa1": 4, "pa2": 5}
@@ -41,86 +42,89 @@ LEARNING_RATE_TYPES = {"constant": 1, "optimal": 2, "invscaling": 3,
 PENALTY_TYPES = {"none": 0, "l2": 2, "l1": 1, "elasticnet": 3}
 
 DEFAULT_EPSILON = 0.1
+
+
 # Default value of ``epsilon`` parameter.
 
-def _wrapper(self,coef, intercept, loss_function,
-                     penalty_type, alpha, C, l1_ratio,
-                     dataset, n_iter, fit_intercept,
-                     verbose, shuffle, seed,
-                     pos_weight, neg_weight,
-                     learning_rate_type, eta0,
-                     power_t, t_, intercept_decay,coefArray,interceptArray,i):
-	print("Start %s"%i)
-        coef,intercept = plain_sgd(coef, intercept, loss_function,
-                                                penalty_type, alpha, C, l1_ratio,
-                                                dataset, n_iter, int(fit_intercept),
-                                                int(verbose), int(shuffle), seed,
-                                                pos_weight, neg_weight,
-                                                learning_rate_type, eta0,
-                                                power_t, t_, intercept_decay)
-        print(coef, intercept)
-        coefArray[i] = int(coef[0])
-	coefArray[i+10] =int(coef[1])
-	coefArray[i+20] =int(coef[2])
-        interceptArray[i] = int(intercept)
-	print("End %s"%i)
+def _wrapper(self, coef, intercept, loss_function,
+             penalty_type, alpha, C, l1_ratio,
+             dataset, n_iter, fit_intercept,
+             verbose, shuffle, seed,
+             pos_weight, neg_weight,
+             learning_rate_type, eta0,
+             power_t, t_, intercept_decay, coefArray, interceptArray, i):
+    print("Start %s" % i)
+    coef, intercept = plain_sgd(coef, intercept, loss_function,
+                                penalty_type, alpha, C, l1_ratio,
+                                dataset, n_iter, int(fit_intercept),
+                                int(verbose), int(shuffle), seed,
+                                pos_weight, neg_weight,
+                                learning_rate_type, eta0,
+                                power_t, t_, intercept_decay)
+    print(coef, intercept)
+    coefArray[i] = int(coef[0])
+    coefArray[i + 10] = int(coef[1])
+    coefArray[i + 20] = int(coef[2])
+    interceptArray[i] = int(intercept)
+    print("End %s" % i)
 
-    def parallelizer(self, coef, intercept, loss_function,
-                     penalty_type, alpha, C, l1_ratio,
-                     dataset, n_iter, fit_intercept,
-                     verbose, shuffle, seed,
-                     pos_weight, neg_weight,
-                     learning_rate_type, eta0,
-                     power_t, t_, intercept_decay):
 
-        print("Coef %s" % coef)
-        print("Intercept %s" % intercept)
-        print("Loss Function %s" % loss_function)
-        print("Penalty Type %s" % penalty_type)
-        print("Alpha %s" % alpha)
-        print("C %s" % C)
-        print("l1 Ratio %s" % l1_ratio)
-        print("N Iter %s" % n_iter)
-        print("Intercept %s" % fit_intercept)
-        print("Verbose %s" % verbose)
-        print("shuffle %s" % shuffle)
-        print("seed %s" % seed)
-        print("pos weight %s" % pos_weight)
-        print("neg weight %s" % neg_weight)
-        print("learning rate tyepe %s" % learning_rate_type)
-        print("eta0 %s" % eta0)
-        print("power t %s" % power_t)
-        print("t %s" % t_)
-        print("Intercept Decay %s" % intercept_decay)
+def parallelizer(coef, intercept, loss_function,
+                 penalty_type, alpha, C, l1_ratio,
+                 dataset, n_iter, fit_intercept,
+                 verbose, shuffle, seed,
+                 pos_weight, neg_weight,
+                 learning_rate_type, eta0,
+                 power_t, t_, intercept_decay):
+    print("Coef %s" % coef)
+    print("Intercept %s" % intercept)
+    print("Loss Function %s" % loss_function)
+    print("Penalty Type %s" % penalty_type)
+    print("Alpha %s" % alpha)
+    print("C %s" % C)
+    print("l1 Ratio %s" % l1_ratio)
+    print("N Iter %s" % n_iter)
+    print("Intercept %s" % fit_intercept)
+    print("Verbose %s" % verbose)
+    print("shuffle %s" % shuffle)
+    print("seed %s" % seed)
+    print("pos weight %s" % pos_weight)
+    print("neg weight %s" % neg_weight)
+    print("learning rate tyepe %s" % learning_rate_type)
+    print("eta0 %s" % eta0)
+    print("power t %s" % power_t)
+    print("t %s" % t_)
+    print("Intercept Decay %s" % intercept_decay)
 
-        # return plain_sgd(coef, intercept, loss_function,
-        #           penalty_type, alpha, C, l1_ratio,
-        #           dataset, n_iter, int(fit_intercept),
-        #           int(verbose), int(shuffle), seed,
-        #           pos_weight, neg_weight,
-        #           learning_rate_type, eta0,
-        #           power_t, t_, intercept_decay)
+    # return plain_sgd(coef, intercept, loss_function,
+    #           penalty_type, alpha, C, l1_ratio,
+    #           dataset, n_iter, int(fit_intercept),
+    #           int(verbose), int(shuffle), seed,
+    #           pos_weight, neg_weight,
+    #           learning_rate_type, eta0,
+    #           power_t, t_, intercept_decay)
 
-        coefArray = Array('i', range(30))
-        interceptArray = Array('i', range(10))
-	p = []
+    coefArray = Array('i', range(30))
+    interceptArray = Array('i', range(10))
+    p = []
 
-        for i in range(0, 10):
-            p.insert(0, Process(target=self._wrapper, args=(coef, intercept, loss_function,
-                                                penalty_type, alpha, C, l1_ratio,
-                                                dataset, n_iter, int(fit_intercept),
-                                                int(verbose), int(shuffle), seed,
-                                                pos_weight, neg_weight,
-                                                learning_rate_type, eta0,
-                                                power_t, t_, intercept_decay,coefArray,interceptArray,i)))
-            p[0].start()
+    for i in range(0, 10):
+        p.insert(0, Process(target=_wrapper, args=(coef, intercept, loss_function,
+                                                        penalty_type, alpha, C, l1_ratio,
+                                                        dataset, n_iter, int(fit_intercept),
+                                                        int(verbose), int(shuffle), seed,
+                                                        pos_weight, neg_weight,
+                                                        learning_rate_type, eta0,
+                                                        power_t, t_, intercept_decay, coefArray, interceptArray, i)))
+        p[0].start()
 
-	for i in range(0,10):
-	    p[i].join()
+    for i in range(0, 10):
+        p[i].join()
 
-        print(coefArray[:])
-        print(interceptArray[:])
-        return 0.0, 0.0
+    print(coefArray[:])
+    print(interceptArray[:])
+    return 0.0, 0.0
+
 
 def _prepare_fit_binary(est, y, i):
     """Initialization for fit_binary.
@@ -177,7 +181,7 @@ def fit_binary(est, i, X, y, alpha, C, learning_rate, n_iter,
     seed = random_state.randint(0, np.iinfo(np.int32).max)
 
     if not est.average:
-        return plain_sgd(coef, intercept, est.loss_function,
+        return parallelizer(coef, intercept, est.loss_function,
                          penalty_type, alpha, C, est.l1_ratio,
                          dataset, n_iter, int(est.fit_intercept),
                          int(est.verbose), int(est.shuffle), seed,
@@ -187,17 +191,17 @@ def fit_binary(est, i, X, y, alpha, C, learning_rate, n_iter,
 
     else:
         standard_coef, standard_intercept, average_coef, \
-            average_intercept = average_sgd(coef, intercept, average_coef,
-                                            average_intercept,
-                                            est.loss_function, penalty_type,
-                                            alpha, C, est.l1_ratio, dataset,
-                                            n_iter, int(est.fit_intercept),
-                                            int(est.verbose), int(est.shuffle),
-                                            seed, pos_weight, neg_weight,
-                                            learning_rate_type, est.eta0,
-                                            est.power_t, est.t_,
-                                            intercept_decay,
-                                            est.average)
+        average_intercept = average_sgd(coef, intercept, average_coef,
+                                        average_intercept,
+                                        est.loss_function, penalty_type,
+                                        alpha, C, est.l1_ratio, dataset,
+                                        n_iter, int(est.fit_intercept),
+                                        int(est.verbose), int(est.shuffle),
+                                        seed, pos_weight, neg_weight,
+                                        learning_rate_type, est.eta0,
+                                        est.power_t, est.t_,
+                                        intercept_decay,
+                                        est.average)
 
         if len(est.classes_) == 2:
             est.average_intercept_[0] = average_intercept
@@ -209,14 +213,13 @@ def fit_binary(est, i, X, y, alpha, C, learning_rate, n_iter,
 
 class BaseSGDClassifier(six.with_metaclass(ABCMeta, BaseSGD,
                                            LinearClassifierMixin)):
-
     loss_functions = {
         "hinge": (Hinge, 1.0),
         "squared_hinge": (SquaredHinge, 1.0),
         "perceptron": (Hinge, 0.0),
-        "log": (Log, ),
-        "modified_huber": (ModifiedHuber, ),
-        "squared_loss": (SquaredLoss, ),
+        "log": (Log,),
+        "modified_huber": (ModifiedHuber,),
+        "squared_loss": (SquaredLoss,),
         "huber": (Huber, DEFAULT_EPSILON),
         "epsilon_insensitive": (EpsilonInsensitive, DEFAULT_EPSILON),
         "squared_epsilon_insensitive": (SquaredEpsilonInsensitive,
@@ -359,10 +362,10 @@ class BaseSGDClassifier(six.with_metaclass(ABCMeta, BaseSGD,
         # Use joblib to fit OvA in parallel.
         result = Parallel(n_jobs=self.n_jobs, backend="threading",
                           verbose=self.verbose)(
-            delayed(fit_binary)(self, i, X, y, alpha, C, learning_rate,
-                                n_iter, self._expanded_class_weight[i], 1.,
-                                sample_weight)
-            for i in range(len(self.classes_)))
+                delayed(fit_binary)(self, i, X, y, alpha, C, learning_rate,
+                                    n_iter, self._expanded_class_weight[i], 1.,
+                                    sample_weight)
+                for i in range(len(self.classes_)))
 
         for i, (_, intercept) in enumerate(result):
             self.intercept_[i] = intercept
@@ -491,7 +494,7 @@ class SGDClassifier(BaseSGDClassifier, _LearntSelectorMixin):
         'squared_hinge' is like hinge but is quadratically penalized.
         'perceptron' is the linear loss used by the perceptron algorithm.
         The other losses are designed for regression but can be useful in
-        classification as well; see SGDRegressor for a description.
+        classification as well; see ParallelSGDRegressor for a description.
 
     penalty : str, 'none', 'l2', 'l1', or 'elasticnet'
         The penalty (aka regularization term) to be used. Defaults to 'l2'
@@ -614,12 +617,12 @@ class SGDClassifier(BaseSGDClassifier, _LearntSelectorMixin):
                  learning_rate="optimal", eta0=0.0, power_t=0.5,
                  class_weight=None, warm_start=False, average=False):
         super(SGDClassifier, self).__init__(
-            loss=loss, penalty=penalty, alpha=alpha, l1_ratio=l1_ratio,
-            fit_intercept=fit_intercept, n_iter=n_iter, shuffle=shuffle,
-            verbose=verbose, epsilon=epsilon, n_jobs=n_jobs,
-            random_state=random_state, learning_rate=learning_rate, eta0=eta0,
-            power_t=power_t, class_weight=class_weight, warm_start=warm_start,
-            average=average)
+                loss=loss, penalty=penalty, alpha=alpha, l1_ratio=l1_ratio,
+                fit_intercept=fit_intercept, n_iter=n_iter, shuffle=shuffle,
+                verbose=verbose, epsilon=epsilon, n_jobs=n_jobs,
+                random_state=random_state, learning_rate=learning_rate, eta0=eta0,
+                power_t=power_t, class_weight=class_weight, warm_start=warm_start,
+                average=average)
 
     def _check_proba(self):
         check_is_fitted(self, "t_")
@@ -734,10 +737,9 @@ class SGDClassifier(BaseSGDClassifier, _LearntSelectorMixin):
         return np.log(self.predict_proba(X))
 
 
-class BaseSGDRegressor(BaseSGD, RegressorMixin):
-
+class ParallelBaseSGDRegressor(BaseSGD, RegressorMixin):
     loss_functions = {
-        "squared_loss": (SquaredLoss, ),
+        "squared_loss": (SquaredLoss,),
         "huber": (Huber, DEFAULT_EPSILON),
         "epsilon_insensitive": (EpsilonInsensitive, DEFAULT_EPSILON),
         "squared_epsilon_insensitive": (SquaredEpsilonInsensitive,
@@ -750,17 +752,17 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
                  warm_start=False, average=False):
-        super(BaseSGDRegressor, self).__init__(loss=loss, penalty=penalty,
-                                               alpha=alpha, l1_ratio=l1_ratio,
-                                               fit_intercept=fit_intercept,
-                                               n_iter=n_iter, shuffle=shuffle,
-                                               verbose=verbose,
-                                               epsilon=epsilon,
-                                               random_state=random_state,
-                                               learning_rate=learning_rate,
-                                               eta0=eta0, power_t=power_t,
-                                               warm_start=warm_start,
-                                               average=average)
+        super(ParallelBaseSGDRegressor, self).__init__(loss=loss, penalty=penalty,
+                                                       alpha=alpha, l1_ratio=l1_ratio,
+                                                       fit_intercept=fit_intercept,
+                                                       n_iter=n_iter, shuffle=shuffle,
+                                                       verbose=verbose,
+                                                       epsilon=epsilon,
+                                                       random_state=random_state,
+                                                       learning_rate=learning_rate,
+                                                       eta0=eta0, power_t=power_t,
+                                                       warm_start=warm_start,
+                                                       average=average)
 
     def _partial_fit(self, X, y, alpha, C, loss, learning_rate,
                      n_iter, sample_weight,
@@ -925,6 +927,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
 
     def _fit_regressor(self, X, y, alpha, C, loss, learning_rate,
                        sample_weight, n_iter):
+        print("Regressor called  ..")
         dataset, intercept_decay = make_dataset(X, y, sample_weight)
 
         loss_function = self._get_loss_function(loss)
@@ -941,7 +944,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
 
         if self.average > 0:
             self.standard_coef_, self.standard_intercept_, \
-                self.average_coef_, self.average_intercept_ =\
+            self.average_coef_, self.average_intercept_ = \
                 average_sgd(self.standard_coef_,
                             self.standard_intercept_[0],
                             self.average_coef_,
@@ -974,7 +977,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
 
         else:
             self.coef_, self.intercept_ = \
-                plain_sgd(self.coef_,
+                parallelizer(self.coef_,
                           self.intercept_[0],
                           loss_function,
                           penalty_type,
@@ -995,7 +998,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
             self.intercept_ = np.atleast_1d(self.intercept_)
 
 
-class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
+class ParallelSGDRegressor(ParallelBaseSGDRegressor, _LearntSelectorMixin):
     """Linear model fitted by minimizing a regularized empirical loss with SGD
 
     SGD stands for Stochastic Gradient Descent: the gradient of the loss is
@@ -1114,10 +1117,10 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
     >>> np.random.seed(0)
     >>> y = np.random.randn(n_samples)
     >>> X = np.random.randn(n_samples, n_features)
-    >>> clf = linear_model.SGDRegressor()
+    >>> clf = linear_model.ParallelSGDRegressor()
     >>> clf.fit(X, y)
     ... #doctest: +NORMALIZE_WHITESPACE
-    SGDRegressor(alpha=0.0001, average=False, epsilon=0.1, eta0=0.01,
+    ParallelSGDRegressor(alpha=0.0001, average=False, epsilon=0.1, eta0=0.01,
                  fit_intercept=True, l1_ratio=0.15, learning_rate='invscaling',
                  loss='squared_loss', n_iter=5, penalty='l2', power_t=0.25,
                  random_state=None, shuffle=True, verbose=0, warm_start=False)
@@ -1127,19 +1130,21 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
     Ridge, ElasticNet, Lasso, SVR
 
     """
+
     def __init__(self, loss="squared_loss", penalty="l2", alpha=0.0001,
                  l1_ratio=0.15, fit_intercept=True, n_iter=5, shuffle=True,
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
                  warm_start=False, average=False):
-        super(SGDRegressor, self).__init__(loss=loss, penalty=penalty,
-                                           alpha=alpha, l1_ratio=l1_ratio,
-                                           fit_intercept=fit_intercept,
-                                           n_iter=n_iter, shuffle=shuffle,
-                                           verbose=verbose,
-                                           epsilon=epsilon,
-                                           random_state=random_state,
-                                           learning_rate=learning_rate,
-                                           eta0=eta0, power_t=power_t,
-                                           warm_start=warm_start,
-                                           average=average)
+        print("Intializing .. ")
+        super(ParallelSGDRegressor, self).__init__(loss=loss, penalty=penalty,
+                                                   alpha=alpha, l1_ratio=l1_ratio,
+                                                   fit_intercept=fit_intercept,
+                                                   n_iter=n_iter, shuffle=shuffle,
+                                                   verbose=verbose,
+                                                   epsilon=epsilon,
+                                                   random_state=random_state,
+                                                   learning_rate=learning_rate,
+                                                   eta0=eta0, power_t=power_t,
+                                                   warm_start=warm_start,
+                                                   average=average)
