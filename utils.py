@@ -11,6 +11,37 @@ from matplotlib import pyplot as plt
 from sklearn.linear_model import SGDRegressor
 
 
+def split_data(X_train, y_train, n_jobs, split_per_job, overlap=False):
+    """
+    Split the data across workers. Outputs a nested list of X_train and y_train
+     [[X_train for worker 1, y_train for worker 1], [X_train for worker 2, y_train for worker 2],...]
+
+    Parameters
+    ----------
+    X_train: Input training data. May be split across workers, see split_per_job
+    y_train: Target training dat
+    n_jobs: Number of workers
+    split_per_job: Fraction of input data that each worker should have
+    overlap: Bool. Should there be overlap in the data split across workers, i.e. should the function use bootstraping
+
+    Returns
+    -------
+    data: Outputs a nested list of X_train and y_train
+     [[X_train for worker 1, y_train for worker 1], [X_train for worker 2, y_train for worker 2],...]
+
+    """
+    if overlap:  # Bootstrap the input data across workers
+        data_size = len(X_train)
+        # np.random.choice uses replace=False so that one worker gets unique samples
+        splits = [np.random.choice(data_size, size=int(split_per_job*data_size), replace=False) for _ in range(n_jobs)]
+        data = zip([X_train[split] for split in splits], [y_train[split] for split in splits])
+    else:
+        if split_per_job != 1/n_jobs:  # Data must be split evenly if there is no overlap
+            raise Exception("split_per_job must be equal to 1/n_jobs")
+        data = zip(np.split(X_train, n_jobs), np.split(y_train, n_jobs))
+    return data
+
+
 def sim_parallel_sgd(X_train, y_train, X_test, y_test,
                      n_iter, n_jobs, split_per_job, n_sync=1,
                      overlap=False, verbose=False):
@@ -40,15 +71,7 @@ def sim_parallel_sgd(X_train, y_train, X_test, y_test,
     """
 
     """ Split data """
-    if overlap:  # Bootstrap the input data across workers
-        data_size = len(X_train)
-        # np.random.choice uses replace=False so that one worker gets unique samples
-        splits = [np.random.choice(data_size, size=int(split_per_job*data_size), replace=False) for _ in range(n_jobs)]
-        data = zip([X_train[split] for split in splits], [y_train[split] for split in splits])
-    else:
-        if split_per_job != 1/n_jobs:  # Data must be split evenly if there is no overlap
-            raise Exception("split_per_job must be equal to 1/n_jobs")
-        data = zip(np.split(X_train, n_jobs), np.split(y_train, n_jobs))
+    data = split_data(X_train, y_train, n_jobs, split_per_job, overlap)
 
     """ Simulate parallel execution """
     scores = []  # List containing final output
@@ -86,7 +109,8 @@ def sim_parallel_sgd(X_train, y_train, X_test, y_test,
         scores += [iter_scores]
 
         if i % int(n_iter/n_sync) == 0 and i != 0:  # Sync weights every (n_iter/n_sync) iterations
-            # print "synced"
+            if verbose:
+                print "Synced at iteration:", i
             for sgd in sgds[:-1]:  # Iterate through all workers except the last (which is used for aggregates)
                 sgd.coef_ = iter_coefs
                 sgd.intercept_ = iter_intercepts
@@ -119,40 +143,31 @@ def plot_scores(scores, agg_only=True):
     plt.plot(range(len(scores[-1])), scores[-1], '--')
 
 
-""" Trial parallel implementation"""
+""" Parallel implementation """
 
 
 def psgd_method(args):
-    X_train, y_train, n_iter = args
-    sgd = SGDRegressor(n_iter=n_iter)
+    sgd, data = args
+    X_train, y_train = data
     sgd.fit(X_train, y_train)
-    return sgd.coef_, sgd.intercept_
+    return sgd
 
 
-def add_results(x, y):
-    return x[0]+y[0], x[1]+y[1]
+def parallel_sgd(pool, sgd, n_iter, n_jobs, n_sync, data):
+    # n_iter_sync = n_iter/n_sync
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter)
+            for _ in range(n_jobs)]
+
+    for _ in range(n_sync):
+        args = zip(sgds, data)
+        sgds = pool.map(psgd_method, args)
+        coef = np.array([x.coef_ for x in sgds]).mean(axis=0)
+        intercept = np.array([x.intercept_ for x in sgds]).mean(axis=0)
+        for s in sgds:
+            s.coef_ = coef
+            s.intercept_ = intercept
 
 
-def parallel_sgd(sgd, pool, X, y, n_iter, n_jobs):
-
-    # Split data into n_jobs chunks
-    print "Spliting data..."
-    data = zip(np.split(X, n_jobs),
-               np.split(y, n_jobs),
-               [n_iter for _ in range(n_jobs)])
-
-    # Execute in parallel
-    print "Executing in parallel..."
-    result = pool.map(psgd_method, data)
-
-    # Combine results
-    print "Combining results..."
-#     result = reduce(add_results, result)
-#     result = [x/n_jobs for x in result]
-    result = np.mean(np.array(result), axis=0)
-
-    # Add coefs and intercept to the sgd object
-    coef, intercept = result
     sgd.coef_ = coef
     sgd.intercept_ = intercept
 
