@@ -3,6 +3,7 @@ All helper functions for this project are implemented here.
 
 Author: Angad Gill
 """
+from sys import stdout
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -10,7 +11,7 @@ from matplotlib import pyplot as plt
 from sklearn.linear_model import SGDRegressor
 
 
-def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per_job, overlap=False):
+def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per_job, overlap=False, verbose=False):
     """
     Simulate parallel execution of SGDRegressor.
 
@@ -56,6 +57,10 @@ def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per
     sgds += [SGDRegressor()]  # For calculating aggregate score for each iteration
 
     for i in range(n_iter):  # Execute iterations one-by-one
+        if verbose:
+            stdout.write("Iteration: " + str(i))
+            stdout.write('\r')
+
         iter_scores = []
         iter_coefs = []
         iter_intercepts = []
