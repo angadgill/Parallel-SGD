@@ -11,7 +11,9 @@ from matplotlib import pyplot as plt
 from sklearn.linear_model import SGDRegressor
 
 
-def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per_job, overlap=False, verbose=False):
+def sim_parallel_sgd(X_train, y_train, X_test, y_test,
+                     n_iter, n_jobs, split_per_job, n_sync=1,
+                     overlap=False, verbose=False):
     """
     Simulate parallel execution of SGDRegressor.
 
@@ -23,6 +25,7 @@ def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per
     y_test: Target test data
     n_iter: Number of iterations for each worker
     n_jobs: Number of simulated workers
+    n_sync: Number of times weights should be syncrhonized, including the one at the end
     split_per_job: Fraction of input data that each worker should have
     overlap: Bool. Should there be overlap in the data split across workers, i.e. should the function use bootstraping
 
@@ -81,6 +84,12 @@ def sim_parallel_sgd(X_train, y_train, X_test, y_test, n_iter, n_jobs, split_per
                 iter_scores += [sgd.score(X_test, y_test)]
 
         scores += [iter_scores]
+
+        if i % int(n_iter/n_sync) == 0 and i != 0:  # Sync weights every (n_iter/n_sync) iterations
+            # print "synced"
+            for sgd in sgds[:-1]:  # Iterate through all workers except the last (which is used for aggregates)
+                sgd.coef_ = iter_coefs
+                sgd.intercept_ = iter_intercepts
 
     return scores
 
