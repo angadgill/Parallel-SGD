@@ -147,6 +147,20 @@ def plot_scores(scores, agg_only=True):
 
 
 def psgd_method(args):
+    """
+    SGD method run in parallel using map.
+
+    Parameters
+    ----------
+    args: tuple (sgd, data), where
+        sgd is SGDRegressor object and
+        data is a tuple: (X_train, y_train)
+
+    Returns
+    -------
+    sgd: object returned after executing .fit()
+
+    """
     sgd, data = args
     X_train, y_train = data
     sgd.fit(X_train, y_train)
@@ -154,8 +168,25 @@ def psgd_method(args):
 
 
 def parallel_sgd(pool, sgd, n_iter, n_jobs, n_sync, data):
-    # n_iter_sync = n_iter/n_sync
-    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter)
+    """
+    High level parallelization of SGDRegressor.
+
+    Parameters
+    ----------
+    pool: multiprocessor pool to use for this parallelization
+    sgd: SGDRegressor instance whose coef and intercept need to be updated
+    n_iter: number of iterations per worker
+    n_jobs: number of parallel workers
+    n_sync: number of synchronization steps. Syncs are spread evenly through out the iterations
+    data: list of (X, y) data for the workers. This list should have n_jobs elements
+
+    Returns
+    -------
+    sgd: SGDRegressor instance with updated coef and intercept
+    """
+
+    n_iter_sync = n_iter/n_sync  # Iterations per model between syncs
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_sync)
             for _ in range(n_jobs)]
 
     for _ in range(n_sync):
