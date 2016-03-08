@@ -215,7 +215,22 @@ def parallel_plain_sgd(coef, intercept, loss_function,
 
     print(coefArray[:])
     print(interceptArray[:])
-    return 0.0, 0.0
+
+    sum0=0.0
+    sum1=0.0
+    sum2=0.0
+    sum3=0.0
+    for i in range(10):
+        sum0+=coefArray[i]
+        sum1+=coefArray[i+10]
+        sum2+=coefArray[i+20]
+        sum3+=interceptArray[i]
+
+    final_coef =(sum0+sum1+sum2/30.0)
+    final_intercept = sum3/10.0
+    print ("Final Coef %s" %final_coef)
+    print ("Final Intercept %s" %final_intercept)
+    return final_coef, final_intercept
 
 
 def _prepare_fit_binary(est, y, i):
