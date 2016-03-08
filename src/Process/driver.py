@@ -1,10 +1,12 @@
 from parallel import ParallelSGDRegressor
+from sklearn import datasets
 import numpy as np
 
 if __name__ == '__main__':
 
-	X = np.matrix('1.0 2.0 3.0; 4.0 5 6;7.0 8 9')
-	y = np.array([1,2,3], dtype='float64')
-
+	iris = datasets.load_iris()
+	#print(iris.data)
+	X = iris.data[:,0:3]
+	y = iris.data[:,3]
 	psgd = ParallelSGDRegressor()
 	psgd.fit(X.astype('float64'), y)

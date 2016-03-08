@@ -152,10 +152,10 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                                 learning_rate_type, eta0,
                                 power_t, t_, intercept_decay)
     print(coef, intercept)
-    coefArray[i] = int(coef[0])
-    coefArray[i + 10] = int(coef[1])
-    coefArray[i + 20] = int(coef[2])
-    interceptArray[i] = int(intercept)
+    coefArray[i] = coef[0]
+    coefArray[i + 10] = coef[1]
+    coefArray[i + 20] = coef[2]
+    interceptArray[i] = intercept
     print("End %s" % i)
 
 
@@ -185,6 +185,7 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     print("power t %s" % power_t)
     print("t %s" % t_)
     print("Intercept Decay %s" % intercept_decay)
+    print("Dataset %s" %dataset)
 
     # return plain_sgd(coef, intercept, loss_function,
     #           penalty_type, alpha, C, l1_ratio,
@@ -194,8 +195,8 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     #           learning_rate_type, eta0,
     #           power_t, t_, intercept_decay)
 
-    coefArray = Array('i', range(30))
-    interceptArray = Array('i', range(10))
+    coefArray = Array('d',range(30))
+    interceptArray = Array('d', range(10))
     p = []
 
     for i in range(0, 10):
