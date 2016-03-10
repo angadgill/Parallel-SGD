@@ -61,7 +61,7 @@ def _average_sgd_wrapper(coef, intercept, average_coef, average_intercept,
                          pos_weight, neg_weight,
                          learning_rate_type, eta0,
                          power_t, t_, intercept_decay, average, coefArray, interceptArray, i):
-    print("Start %s" % i)
+    #print("Start %s" % i)
     coef, intercept = average_sgd(coef, intercept, average_coef, average_intercept, loss_function,
                                   penalty_type, alpha, C, l1_ratio,
                                   dataset, n_iter, int(fit_intercept),
@@ -69,12 +69,12 @@ def _average_sgd_wrapper(coef, intercept, average_coef, average_intercept,
                                   pos_weight, neg_weight,
                                   learning_rate_type, eta0,
                                   power_t, t_, intercept_decay, average)
-    print(coef, intercept)
+    #print(coef, intercept)
     coefArray[i] = int(coef[0])
     coefArray[i + 10] = int(coef[1])
     coefArray[i + 20] = int(coef[2])
     interceptArray[i] = int(intercept)
-    print("End %s" % i)
+    #print("End %s" % i)
 
 
 def parallel_average_sgd(coef, intercept, average_coef, average_intercept, loss_function,
@@ -84,25 +84,25 @@ def parallel_average_sgd(coef, intercept, average_coef, average_intercept, loss_
                          pos_weight, neg_weight,
                          learning_rate_type, eta0,
                          power_t, t_, intercept_decay, average):
-    print("Coef %s" % coef)
-    print("Intercept %s" % intercept)
-    print("Loss Function %s" % loss_function)
-    print("Penalty Type %s" % penalty_type)
-    print("Alpha %s" % alpha)
-    print("C %s" % C)
-    print("l1 Ratio %s" % l1_ratio)
-    print("N Iter %s" % n_iter)
-    print("Intercept %s" % fit_intercept)
-    print("Verbose %s" % verbose)
-    print("shuffle %s" % shuffle)
-    print("seed %s" % seed)
-    print("pos weight %s" % pos_weight)
-    print("neg weight %s" % neg_weight)
-    print("learning rate tyepe %s" % learning_rate_type)
-    print("eta0 %s" % eta0)
-    print("power t %s" % power_t)
-    print("t %s" % t_)
-    print("Intercept Decay %s" % intercept_decay)
+    # print("Coef %s" % coef)
+    # print("Intercept %s" % intercept)
+    # print("Loss Function %s" % loss_function)
+    # print("Penalty Type %s" % penalty_type)
+    # print("Alpha %s" % alpha)
+    # print("C %s" % C)
+    # print("l1 Ratio %s" % l1_ratio)
+    # print("N Iter %s" % n_iter)
+    # print("Intercept %s" % fit_intercept)
+    # print("Verbose %s" % verbose)
+    # print("shuffle %s" % shuffle)
+    # print("seed %s" % seed)
+    # print("pos weight %s" % pos_weight)
+    # print("neg weight %s" % neg_weight)
+    # print("learning rate tyepe %s" % learning_rate_type)
+    # print("eta0 %s" % eta0)
+    # print("power t %s" % power_t)
+    # print("t %s" % t_)
+    # print("Intercept Decay %s" % intercept_decay)
 
     # return plain_sgd(coef, intercept, loss_function,
     #           penalty_type, alpha, C, l1_ratio,
@@ -131,8 +131,8 @@ def parallel_average_sgd(coef, intercept, average_coef, average_intercept, loss_
     for i in range(0, 10):
         p[i].join()
 
-    print(coefArray[:])
-    print(interceptArray[:])
+    #print(coefArray[:])
+    #print(interceptArray[:])
     return 0.0, 0.0
 
 
@@ -143,7 +143,7 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                        pos_weight, neg_weight,
                        learning_rate_type, eta0,
                        power_t, t_, intercept_decay, coefArray, interceptArray, i):
-    print("Start %s" % i)
+    #print("Start %s" % i)
     coef, intercept = plain_sgd(coef, intercept, loss_function,
                                 penalty_type, alpha, C, l1_ratio,
                                 dataset, n_iter, int(fit_intercept),
@@ -151,12 +151,12 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                                 pos_weight, neg_weight,
                                 learning_rate_type, eta0,
                                 power_t, t_, intercept_decay)
-    print(coef, intercept)
+    #print(coef, intercept)
     coefArray[i] = coef[0]
     coefArray[i + 10] = coef[1]
     coefArray[i + 20] = coef[2]
     interceptArray[i] = intercept
-    print("End %s" % i)
+    #print("End %s" % i)
 
 
 def parallel_plain_sgd(coef, intercept, loss_function,
@@ -166,26 +166,26 @@ def parallel_plain_sgd(coef, intercept, loss_function,
                        pos_weight, neg_weight,
                        learning_rate_type, eta0,
                        power_t, t_, intercept_decay):
-    print("Coef %s" % coef)
-    print("Intercept %s" % intercept)
-    print("Loss Function %s" % loss_function)
-    print("Penalty Type %s" % penalty_type)
-    print("Alpha %s" % alpha)
-    print("C %s" % C)
-    print("l1 Ratio %s" % l1_ratio)
-    print("N Iter %s" % n_iter)
-    print("Intercept %s" % fit_intercept)
-    print("Verbose %s" % verbose)
-    print("shuffle %s" % shuffle)
-    print("seed %s" % seed)
-    print("pos weight %s" % pos_weight)
-    print("neg weight %s" % neg_weight)
-    print("learning rate tyepe %s" % learning_rate_type)
-    print("eta0 %s" % eta0)
-    print("power t %s" % power_t)
-    print("t %s" % t_)
-    print("Intercept Decay %s" % intercept_decay)
-    print("Dataset %s" %dataset)
+    # print("Coef %s" % coef)
+    # print("Intercept %s" % intercept)
+    # print("Loss Function %s" % loss_function)
+    # print("Penalty Type %s" % penalty_type)
+    # print("Alpha %s" % alpha)
+    # print("C %s" % C)
+    # print("l1 Ratio %s" % l1_ratio)
+    # print("N Iter %s" % n_iter)
+    # print("Intercept %s" % fit_intercept)
+    # print("Verbose %s" % verbose)
+    # print("shuffle %s" % shuffle)
+    # print("seed %s" % seed)
+    # print("pos weight %s" % pos_weight)
+    # print("neg weight %s" % neg_weight)
+    # print("learning rate tyepe %s" % learning_rate_type)
+    # print("eta0 %s" % eta0)
+    # print("power t %s" % power_t)
+    # print("t %s" % t_)
+    # print("Intercept Decay %s" % intercept_decay)
+    # print("Dataset %s" %dataset)
 
     # return plain_sgd(coef, intercept, loss_function,
     #           penalty_type, alpha, C, l1_ratio,
@@ -213,8 +213,8 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     for i in range(0, 10):
         p[i].join()
 
-    print(coefArray[:])
-    print(interceptArray[:])
+    # print(coefArray[:])
+    # print(interceptArray[:])
 
     sum0=0.0
     sum1=0.0
@@ -226,10 +226,10 @@ def parallel_plain_sgd(coef, intercept, loss_function,
         sum2+=coefArray[i+20]
         sum3+=interceptArray[i]
 
-    final_coef =(sum0+sum1+sum2/30.0)
+    final_coef =[sum0/10.0,sum1/10.0,sum2/10.0]
     final_intercept = sum3/10.0
-    print ("Final Coef %s" %final_coef)
-    print ("Final Intercept %s" %final_intercept)
+    #print ("Final Coef %s" %final_coef)
+    #print ("Final Intercept %s" %final_intercept)
     return final_coef, final_intercept
 
 
@@ -1034,7 +1034,6 @@ class ParallelBaseSGDRegressor(BaseSGD, RegressorMixin):
 
     def _fit_regressor(self, X, y, alpha, C, loss, learning_rate,
                        sample_weight, n_iter):
-        print("Regressor called  ..")
         dataset, intercept_decay = make_dataset(X, y, sample_weight)
 
         loss_function = self._get_loss_function(loss)
@@ -1243,7 +1242,6 @@ class ParallelSGDRegressor(ParallelBaseSGDRegressor, _LearntSelectorMixin):
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
                  warm_start=False, average=False):
-        print("Intializing .. ")
         super(ParallelSGDRegressor, self).__init__(loss=loss, penalty=penalty,
                                                    alpha=alpha, l1_ratio=l1_ratio,
                                                    fit_intercept=fit_intercept,
