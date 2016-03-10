@@ -153,7 +153,7 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                                 power_t, t_, intercept_decay)
     #print(coef, intercept)
     for k in range(100):
-        coefArray[k+i*10] = coef[k]
+        coefArray[k+i*100] = coef[k]
 
     interceptArray[i] = intercept
     #print("End %s" % i)

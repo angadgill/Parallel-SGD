@@ -4,6 +4,7 @@ from sklearn import datasets
 from sklearn.datasets import make_regression
 from sklearn.cross_validation import ShuffleSplit
 import numpy as np
+import time
 
 if __name__ == '__main__':
 
@@ -28,12 +29,18 @@ if __name__ == '__main__':
 	#X = iris.data[:,0:3]
 	#y = iris.data[:,3]
 
+	start_time = time.time()
 	sgd = SGDRegressor()
 	sgd.fit(X_train.astype('float64'),y_train)
+	elapsed_time = time.time() - start_time
+	print("Time %s"%elapsed_time)
 	print(sgd.coef_,sgd.intercept_)
-	print(sgd.score(X_test,y_test))
+	print("Accuracy %s"%sgd.score(X_test,y_test))
 
+	start_time = time.time()
 	psgd = ParallelSGDRegressor()
 	psgd.fit(X_train.astype('float64'), y_train)
+	elapsed_time = time.time() - start_time
+	print("Time %s" %elapsed_time)
 	print(psgd.coef_,psgd.intercept_)
-	print(psgd.score(X_test,y_test))
+	print("Accuracy %s"%psgd.score(X_test,y_test))
