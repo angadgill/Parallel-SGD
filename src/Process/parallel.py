@@ -152,9 +152,9 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                                 learning_rate_type, eta0,
                                 power_t, t_, intercept_decay)
     #print(coef, intercept)
-    coefArray[i] = coef[0]
-    coefArray[i + 10] = coef[1]
-    coefArray[i + 20] = coef[2]
+    for k in range(100):
+        coefArray[k+i*10] = coef[k]
+
     interceptArray[i] = intercept
     #print("End %s" % i)
 
@@ -166,36 +166,8 @@ def parallel_plain_sgd(coef, intercept, loss_function,
                        pos_weight, neg_weight,
                        learning_rate_type, eta0,
                        power_t, t_, intercept_decay):
-    # print("Coef %s" % coef)
-    # print("Intercept %s" % intercept)
-    # print("Loss Function %s" % loss_function)
-    # print("Penalty Type %s" % penalty_type)
-    # print("Alpha %s" % alpha)
-    # print("C %s" % C)
-    # print("l1 Ratio %s" % l1_ratio)
-    # print("N Iter %s" % n_iter)
-    # print("Intercept %s" % fit_intercept)
-    # print("Verbose %s" % verbose)
-    # print("shuffle %s" % shuffle)
-    # print("seed %s" % seed)
-    # print("pos weight %s" % pos_weight)
-    # print("neg weight %s" % neg_weight)
-    # print("learning rate tyepe %s" % learning_rate_type)
-    # print("eta0 %s" % eta0)
-    # print("power t %s" % power_t)
-    # print("t %s" % t_)
-    # print("Intercept Decay %s" % intercept_decay)
-    # print("Dataset %s" %dataset)
 
-    # return plain_sgd(coef, intercept, loss_function,
-    #           penalty_type, alpha, C, l1_ratio,
-    #           dataset, n_iter, int(fit_intercept),
-    #           int(verbose), int(shuffle), seed,
-    #           pos_weight, neg_weight,
-    #           learning_rate_type, eta0,
-    #           power_t, t_, intercept_decay)
-
-    coefArray = Array('d',range(30))
+    coefArray = Array('d',range(1000))
     interceptArray = Array('d', range(10))
     p = []
 
@@ -216,18 +188,20 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     # print(coefArray[:])
     # print(interceptArray[:])
 
-    sum0=0.0
-    sum1=0.0
-    sum2=0.0
-    sum3=0.0
-    for i in range(10):
-        sum0+=coefArray[i]
-        sum1+=coefArray[i+10]
-        sum2+=coefArray[i+20]
-        sum3+=interceptArray[i]
+    sumIntercept=0.0
+    sumCoef = np.zeros((100,), dtype=np.double)
 
-    final_coef =[sum0/10.0,sum1/10.0,sum2/10.0]
-    final_intercept = sum3/10.0
+    for i in range(10):
+        for j in range(100):
+            #print((j+(i*100)))
+            sumCoef[j] =sumCoef[j] +coefArray[j+(i*100)]
+        sumIntercept+=interceptArray[i]
+
+    for i in range(100):
+        sumCoef[i] =sumCoef[i]/10.0;
+
+    final_coef =sumCoef
+    final_intercept = sumIntercept/10.0
     #print ("Final Coef %s" %final_coef)
     #print ("Final Intercept %s" %final_intercept)
     return final_coef, final_intercept
