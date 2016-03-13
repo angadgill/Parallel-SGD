@@ -198,7 +198,7 @@ def psgd_method_1(sgd, X_train, y_train):
     return sgd
 
 
-def psgd_method2(sgd, n_iter, coef, intercept, X_train, y_train):
+def psgd_method_2(sgd, n_iter, coef, intercept, X_train, y_train):
     """
     SGD method run in parallel using map.
 
@@ -401,7 +401,7 @@ def psgd_4(sgd, n_iter_per_job, n_jobs, X_train, y_train, coef, intercept):
             for _ in range(n_jobs)]
 
     sgds = Parallel(n_jobs=n_jobs, backend="threading")(
-        delayed(psgd_method2) (s, n_iter_per_job, coef, intercept, X_train, y_train)
+        delayed(psgd_method_2) (s, n_iter_per_job, coef, intercept, X_train, y_train)
         for s in sgds)
 
     sgd.coef_ = np.array([x.coef_ for x in sgds]).mean(axis=0)
