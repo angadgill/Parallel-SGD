@@ -2,13 +2,25 @@
 All helper functions for this project are implemented here.
 
 Author: Angad Gill
+
+Code here is inspired by the following papers:
+1. Zinkevich, M.(2010).Parallelized stochastic gradient descent.
+Advances in Neural Information Processing Systems,
+Retrieved from http://papers.nips.cc/paper/4006-parallelized-stochastic-gradient-descent
+
+2. Niu, F. (2011). HOGWILD!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent.
+Advances in Neural Information Processing Systems,
+Retrieved from http://arxiv.org/abs/1106.5730
 """
+
 from sys import stdout
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from sklearn.linear_model import SGDRegressor
+from joblib import Parallel, delayed
+import threading
 
 
 def split_data(X_train, y_train, n_jobs, split_per_job, overlap=False):
@@ -167,6 +179,60 @@ def psgd_method(args):
     return sgd
 
 
+def psgd_method_1(sgd, X_train, y_train):
+    """
+    SGD method run in parallel using map.
+
+    Parameters
+    ----------
+    args: tuple (sgd, data), where
+        sgd is SGDRegressor object and
+        data is a tuple: (X_train, y_train)
+
+    Returns
+    -------
+    sgd: object returned after executing .fit()
+
+    """
+    sgd.fit(X_train, y_train)
+    return sgd
+
+
+def psgd_method2(sgd, n_iter, coef, intercept, X_train, y_train):
+    """
+    SGD method run in parallel using map.
+
+    Parameters
+    ----------
+    args: tuple (sgd, data), where
+        sgd is SGDRegressor object and
+        data is a tuple: (X_train, y_train)
+
+    Returns
+    -------
+    sgd: object returned after executing .fit()
+
+    """
+    # print threading.current_thread()
+    # n_sync = 2
+    # for i in [n_iter/n_sync for _ in range(n_sync)]:
+    #     # sgd.coef_ = coef
+    #     # sgd.intercept_ = intercept
+    #     # sgd.partial_fit(X_train, y_train)
+    #     sgd.n_iter = i
+    #     sgd.fit(X_train, y_train, coef_init=coef, intercept_init=intercept)
+    #     coef = sgd.coef_
+    #     intercept = sgd.intercept_
+
+    for _ in range(n_iter):
+        sgd.coef_ = coef
+        sgd.intercept_ = intercept
+        sgd.partial_fit(X_train, y_train)
+        coef = sgd.coef_
+        intercept = sgd.intercept_
+    return sgd
+
+
 def parallel_sgd(pool, sgd, n_iter, n_jobs, n_sync, data):
     """
     High level parallelization of SGDRegressor.
@@ -184,9 +250,10 @@ def parallel_sgd(pool, sgd, n_iter, n_jobs, n_sync, data):
     -------
     sgd: SGDRegressor instance with updated coef and intercept
     """
-
+    # eta = sgd.eta0*n_jobs
+    eta = sgd.eta0
     n_iter_sync = n_iter/n_sync  # Iterations per model between syncs
-    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_sync)
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_sync, eta0=eta)
             for _ in range(n_jobs)]
 
     for _ in range(n_sync):
@@ -203,3 +270,141 @@ def parallel_sgd(pool, sgd, n_iter, n_jobs, n_sync, data):
     sgd.intercept_ = intercept
 
     return sgd
+
+
+def psgd_1(sgd, n_iter_per_job, n_jobs, X_train, y_train):
+    """
+    Parallel SGD implementation using multiprocessing. All workers sync once after running SGD independently for
+    n_iter_per_job iterations.
+
+    Parameters
+    ----------
+    sgd: input SGDRegression() object
+    n_iter_per_job: number of iterations per worker
+    n_jobs: number of parallel processes to run
+    X_train: train input data
+    y_train: train target data
+
+    Returns
+    -------
+    sgd: the input SGDRegressor() object with updated coef_ and intercept_
+    """
+
+    sgds = Parallel(n_jobs=n_jobs)(
+        delayed(psgd_method_1)(s, X_train, y_train)
+        for s in [SGDRegressor(n_iter=n_iter_per_job) for _ in range(n_jobs)])
+    sgd.coef_ = np.array([x.coef_ for x in sgds]).mean(axis=0)
+    sgd.intercept_ = np.array([x.intercept_ for x in sgds]).mean(axis=0)
+    return sgd
+
+
+def psgd_2(sgd, n_iter_per_job, n_jobs, n_syncs, X_train, y_train):
+    """
+    Parallel SGD implementation using multiprocessing. All workers sync n_syncs times while running SGD independently
+    for n_iter_per_job iterations.
+
+    Parameters
+    ----------
+    sgd: input SGDRegression() object
+    n_iter_per_job: number of iterations per worker
+    n_jobs: number of parallel processes to run
+    n_syncs: number of syncs
+    X_train: train input data
+    y_train: train target data
+
+    Returns
+    -------
+    sgd: the input SGDRegressor() object with updated coef_ and intercept_
+
+    """
+    # n_syncs = n_jobs
+    n_iter_sync = n_iter_per_job/n_syncs  # Iterations per model between syncs
+
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_sync)
+            for _ in range(n_jobs)]
+
+    for _ in range(n_syncs):
+        sgds = Parallel(n_jobs=n_jobs)(
+            delayed(psgd_method_1)(s, X_train, y_train) for s in sgds)
+        coef = np.array([x.coef_ for x in sgds]).mean(axis=0)
+        intercept = np.array([x.intercept_ for x in sgds]).mean(axis=0)
+        for s in sgds:
+            s.coef_ = coef
+            s.intercept_ = intercept
+
+    sgd.coef_ = coef
+    sgd.intercept_ = intercept
+
+    return sgd
+
+
+def psgd_3(sgd, n_iter_per_job, n_jobs, n_syncs, X_train, y_train):
+    """
+    Parallel SGD implementation using multiprocessing. All workers sync n_syncs times while running SGD independently
+    for n_iter_per_job iterations. Each worker will have an increased learning rate -- multiple of n_jobs.
+
+    Parameters
+    ----------
+    sgd: input SGDRegression() object
+    n_iter_per_job: number of iterations per worker
+    n_jobs: number of parallel processes to run
+    n_syncs: number of syncs
+    X_train: train input data
+    y_train: train target data
+
+    Returns
+    -------
+    sgd: the input SGDRegressor() object with updated coef_ and intercept_
+
+    """
+    n_iter_sync = n_iter_per_job/n_syncs  # Iterations per model between syncs
+    eta = sgd.eta0 * n_jobs
+
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_sync, eta0=eta)
+            for _ in range(n_jobs)]
+
+    for _ in range(n_syncs):
+        sgds = Parallel(n_jobs=n_jobs)(
+            delayed(psgd_method_1)(s, X_train, y_train) for s in sgds)
+        coef = np.array([x.coef_ for x in sgds]).mean(axis=0)
+        intercept = np.array([x.intercept_ for x in sgds]).mean(axis=0)
+        for s in sgds:
+            s.coef_ = coef
+            s.intercept_ = intercept
+
+    sgd.coef_ = coef
+    sgd.intercept_ = intercept
+
+    return sgd
+
+
+def psgd_4(sgd, n_iter_per_job, n_jobs, X_train, y_train, coef, intercept):
+    """
+    Parallel SGD implementation using multithreading. All workers read coef and intercept from share memory,
+    process them, and then overwrite them.
+
+    Parameters
+    ----------
+    sgd: input SGDRegression() object
+    n_iter_per_job: number of iterations per worker
+    n_jobs: number of parallel processes to run
+    X_train: train input data
+    y_train: train target data
+    coef: randomly initialized coefs stored in shared memory
+    intercept: randomly initialized intercept stored in shared memory
+
+    Returns
+    -------
+    sgd: the input SGDRegressor() object with updated coef_ and intercept_
+    """
+    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_per_job)
+            for _ in range(n_jobs)]
+
+    sgds = Parallel(n_jobs=n_jobs, backend="threading")(
+        delayed(psgd_method2) (s, n_iter_per_job, coef, intercept, X_train, y_train)
+        for s in sgds)
+
+    sgd.coef_ = np.array([x.coef_ for x in sgds]).mean(axis=0)
+    sgd.intercept_ = np.array([x.intercept_ for x in sgds]).mean(axis=0)
+    return sgd
+
