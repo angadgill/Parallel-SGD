@@ -30,7 +30,10 @@ if __name__ == '__main__':
 	#y = iris.data[:,3]
 
 	start_time = time.time()
-	sgd = SGDRegressor()
+	sgd = SGDRegressor(alpha=0.01, average=False, epsilon=0.1, eta0=0.01,
+             fit_intercept=True, l1_ratio=0.15, learning_rate='invscaling',
+             loss='squared_loss', n_iter=1000, penalty='l2', power_t=0.25,
+             random_state=None, shuffle=True, verbose=0, warm_start=False)
 	sgd.fit(X_train.astype('float64'),y_train)
 	elapsed_time = time.time() - start_time
 	print("Time %s"%elapsed_time)
@@ -38,7 +41,10 @@ if __name__ == '__main__':
 	print("Accuracy %s"%sgd.score(X_test,y_test))
 
 	start_time = time.time()
-	psgd = ParallelSGDRegressor()
+	psgd = ParallelSGDRegressor(alpha=0.01, average=False, epsilon=0.1, eta0=0.01,
+             fit_intercept=True, l1_ratio=0.15, learning_rate='invscaling',
+             loss='squared_loss', n_iter=1000, penalty='l2', power_t=0.25,
+             random_state=None, shuffle=True, verbose=0, warm_start=False)
 	psgd.fit(X_train.astype('float64'), y_train)
 	elapsed_time = time.time() - start_time
 	print("Time %s" %elapsed_time)
