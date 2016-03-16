@@ -153,9 +153,9 @@ def _plain_sgd_wrapper(coef, intercept, loss_function,
                                 power_t, t_, intercept_decay)
     #print(coef, intercept)
     for k in range(100):
-        coefArray[k] = coef[k]
+        coefArray[k+i*100] = coef[k]
 
-    interceptArray[0] = intercept
+    interceptArray[i] = intercept
     #print("End %s" % i)
 
 
@@ -167,11 +167,11 @@ def parallel_plain_sgd(coef, intercept, loss_function,
                        learning_rate_type, eta0,
                        power_t, t_, intercept_decay):
 
-    coefArray = Array('d',range(100))
-    interceptArray = Array('d', range(1))
+    coefArray = Array('d',range(1000))
+    interceptArray = Array('d', range(10))
     p = []
-    
-    for i in range(0, 1):
+    n_iter = n_iter/10
+    for i in range(0, 10):
         p.insert(0, Process(target=_plain_sgd_wrapper, args=(coef, intercept, loss_function,
                                                              penalty_type, alpha, C, l1_ratio,
                                                              dataset, n_iter, int(fit_intercept),
@@ -182,7 +182,7 @@ def parallel_plain_sgd(coef, intercept, loss_function,
                                                              i)))
         p[0].start()
 
-    for i in range(0, 1):
+    for i in range(0, 10):
         p[i].join()
 
     # print(coefArray[:])
@@ -191,20 +191,20 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     sumIntercept=0.0
     sumCoef = np.zeros((100,), dtype=np.double)
 
-    #for i in range(10):
-        #for j in range(100):
+    for i in range(10):
+        for j in range(100):
             #print((j+(i*100)))
-            #sumCoef[j] =sumCoef[j] +coefArray[j+(i*100)]
-        #sumIntercept+=interceptArray[i]
+            sumCoef[j] =sumCoef[j] +coefArray[j+(i*100)]
+        sumIntercept+=interceptArray[i]
 
-    #for i in range(100):
-        #sumCoef[i] =sumCoef[i]/10.0;
+    for i in range(100):
+        sumCoef[i] =sumCoef[i]/10.0;
 
-    #final_coef =sumCoef
-    # = sumIntercept/10.0
+    final_coef =sumCoef
+    final_intercept = sumIntercept/10.0
     #print ("Final Coef %s" %final_coef)
     #print ("Final Intercept %s" %final_intercept)
-    return coefArray, interceptArray[0]
+    return final_coef, final_intercept
 
 
 def _prepare_fit_binary(est, y, i):

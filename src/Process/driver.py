@@ -9,7 +9,7 @@ import time
 if __name__ == '__main__':
 
 
-	n_samples =100000
+	n_samples =100
 	n_features=100
 	seed = 1
 	effective_rank =100
