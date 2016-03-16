@@ -170,7 +170,7 @@ def parallel_plain_sgd(coef, intercept, loss_function,
     coefArray = Array('d',range(1000))
     interceptArray = Array('d', range(10))
     p = []
-
+    n_iter = n_iter/10
     for i in range(0, 10):
         p.insert(0, Process(target=_plain_sgd_wrapper, args=(coef, intercept, loss_function,
                                                              penalty_type, alpha, C, l1_ratio,
