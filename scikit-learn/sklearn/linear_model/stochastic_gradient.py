@@ -33,7 +33,6 @@ from .sgd_fast import Huber
 from .sgd_fast import EpsilonInsensitive
 from .sgd_fast import SquaredEpsilonInsensitive
 
-
 LEARNING_RATE_TYPES = {"constant": 1, "optimal": 2, "invscaling": 3,
                        "pa1": 4, "pa2": 5}
 
@@ -841,7 +840,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                  l1_ratio=0.15, fit_intercept=True, n_iter=5, shuffle=True,
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
-                 warm_start=False, average=False):
+                 warm_start=False, average=False, n_jobs=1):
         super(BaseSGDRegressor, self).__init__(loss=loss, penalty=penalty,
                                                alpha=alpha, l1_ratio=l1_ratio,
                                                fit_intercept=fit_intercept,
@@ -853,6 +852,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                                                eta0=eta0, power_t=power_t,
                                                warm_start=warm_start,
                                                average=average)
+        self.n_jobs=int(n_jobs)
 
     def _partial_fit(self, X, y, alpha, C, loss, learning_rate,
                      n_iter, sample_weight,
@@ -1065,23 +1065,46 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                 self.intercept_ = self.standard_intercept_
 
         else:
-            self.coef_, self.intercept_ = \
-                plain_sgd(self.coef_,
-                          self.intercept_[0],
-                          loss_function,
-                          penalty_type,
-                          alpha, C,
-                          self.l1_ratio,
-                          dataset,
-                          n_iter,
-                          int(self.fit_intercept),
-                          int(self.verbose),
-                          int(self.shuffle),
-                          seed,
-                          1.0, 1.0,
-                          learning_rate_type,
-                          self.eta0, self.power_t, self.t_,
-                          intercept_decay)
+            if self.n_jobs > 1:
+                sgd_result = \
+                    Parallel(n_jobs=self.n_jobs, backend='threading')(
+                    delayed(plain_sgd)(self.coef_,
+                              self.intercept_[0],
+                              loss_function,
+                              penalty_type,
+                              alpha, C,
+                              self.l1_ratio,
+                              dataset,
+                              n_iter/self.n_jobs,
+                              int(self.fit_intercept),
+                              int(self.verbose),
+                              int(self.shuffle),
+                              seed,
+                              1.0, 1.0,
+                              learning_rate_type,
+                              self.eta0, self.power_t, self.t_,
+                              intercept_decay) for _ in range(self.n_jobs))
+
+                self.coef_ = np.array([x[0] for x in sgd_result]).mean(axis=0)
+                self.intercept_ = np.array([x[1] for x in sgd_result]).mean(axis=0)
+            else:
+                self.coef_, self.intercept_ = \
+                    plain_sgd(self.coef_,
+                              self.intercept_[0],
+                              loss_function,
+                              penalty_type,
+                              alpha, C,
+                              self.l1_ratio,
+                              dataset,
+                              n_iter,
+                              int(self.fit_intercept),
+                              int(self.verbose),
+                              int(self.shuffle),
+                              seed,
+                              1.0, 1.0,
+                              learning_rate_type,
+                              self.eta0, self.power_t, self.t_,
+                              intercept_decay)
 
             self.t_ += n_iter * X.shape[0]
             self.intercept_ = np.atleast_1d(self.intercept_)
@@ -1184,6 +1207,11 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
         average. So ``average=10 will`` begin averaging after seeing 10
         samples.
 
+    n_jobs : integer, optional
+        The number of CPUs to use to do the .fit or .partial_fit computation. -1 means
+        'all CPUs'. Defaults to 1.
+
+
     Attributes
     ----------
     coef_ : array, shape (n_features,)
@@ -1223,7 +1251,7 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
                  l1_ratio=0.15, fit_intercept=True, n_iter=5, shuffle=True,
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
-                 warm_start=False, average=False):
+                 warm_start=False, average=False, n_jobs=1):
         super(SGDRegressor, self).__init__(loss=loss, penalty=penalty,
                                            alpha=alpha, l1_ratio=l1_ratio,
                                            fit_intercept=fit_intercept,
@@ -1234,4 +1262,4 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
                                            learning_rate=learning_rate,
                                            eta0=eta0, power_t=power_t,
                                            warm_start=warm_start,
-                                           average=average)
+                                           average=average, n_jobs=n_jobs)
