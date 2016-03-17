@@ -198,7 +198,7 @@ def psgd_method_1(sgd, X_train, y_train):
     return sgd
 
 
-def psgd_method_2(sgd, n_iter, coef, intercept, X_train, y_train):
+def psgd_method_2(sgd, loop_iter, coef, intercept, X_train, y_train):
     """
     SGD method run in parallel using map.
 
@@ -213,21 +213,11 @@ def psgd_method_2(sgd, n_iter, coef, intercept, X_train, y_train):
     sgd: object returned after executing .fit()
 
     """
-    # print threading.current_thread()
-    # n_sync = 2
-    # for i in [n_iter/n_sync for _ in range(n_sync)]:
-    #     # sgd.coef_ = coef
-    #     # sgd.intercept_ = intercept
-    #     # sgd.partial_fit(X_train, y_train)
-    #     sgd.n_iter = i
-    #     sgd.fit(X_train, y_train, coef_init=coef, intercept_init=intercept)
-    #     coef = sgd.coef_
-    #     intercept = sgd.intercept_
 
-    for _ in range(n_iter):
+    for _ in range(loop_iter):
         sgd.coef_ = coef
         sgd.intercept_ = intercept
-        sgd.partial_fit(X_train, y_train)
+        sgd.fit(X_train, y_train)
         coef = sgd.coef_
         intercept = sgd.intercept_
     return sgd
@@ -397,7 +387,7 @@ def psgd_4(sgd, n_iter_per_job, n_jobs, X_train, y_train, coef, intercept):
     -------
     sgd: the input SGDRegressor() object with updated coef_ and intercept_
     """
-    sgds = [SGDRegressor(warm_start=True, n_iter=n_iter_per_job)
+    sgds = [SGDRegressor(warm_start=True, n_iter=1)
             for _ in range(n_jobs)]
 
     sgds = Parallel(n_jobs=n_jobs, backend="threading")(

@@ -1087,7 +1087,6 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
 
                 self.coef_ = np.array([x[0] for x in sgd_result]).mean(axis=0)
                 self.intercept_ = np.array([x[1] for x in sgd_result]).mean(axis=0)
-                print "hey!"
             else:
                 self.coef_, self.intercept_ = \
                     plain_sgd(self.coef_,
