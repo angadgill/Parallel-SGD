@@ -398,3 +398,31 @@ def psgd_4(sgd, n_iter_per_job, n_jobs, X_train, y_train, coef, intercept):
     sgd.intercept_ = np.array([x.intercept_ for x in sgds]).mean(axis=0)
     return sgd
 
+
+def plot_speedup_acc(speedup_acc, score1):
+    num_procs = speedup_acc[0].shape[0]
+
+    plt.figure(figsize=(15, 3))
+
+    plt.subplot(1, 3, 1)
+    plt.plot(range(1,num_procs+1), speedup_acc[0])
+    plt.axhline(1, c='r')
+    plt.xlabel("Processors")
+    plt.xticks(range(1,num_procs+1))
+    plt.ylabel("Speed-up")
+    plt.yticks(np.arange(0,num_procs+1, 0.5))
+
+    plt.subplot(1, 3, 2)
+    plt.plot(range(1,num_procs+1), speedup_acc[1])
+    plt.axhline(y=score1, c='r')
+    plt.xlabel("Processors")
+    plt.xticks(range(1,num_procs+1))
+    plt.ylabel("Accuracy")
+    plt.yticks(np.arange(0,1.25, 0.25))
+
+    plt.subplot(1, 3, 3)
+    plt.scatter(speedup_acc[0], speedup_acc[1])
+    plt.xlabel("Speed-up")
+    plt.xticks(np.arange(0,num_procs+1, 0.5))
+    plt.ylabel("Accuracy")
+    plt.yticks(np.arange(0,1.25, 0.25))
