@@ -56,8 +56,8 @@ benchmarks/bench_covertype_data/
 .idea
 
 cythonize.dat
-#*.c
-#*.cpp
-#
-#!*/src/*.c
-#!*/src/*.cpp
+*.c
+*.cpp
+
+!*/src/*.c
+!*/src/*.cpp
