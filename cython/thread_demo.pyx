@@ -30,18 +30,17 @@ def python_loop(X):
 
 
 def cython_loop(double[:] X):
-
     cdef int N = X.shape[0]
     cdef double[:] Y = np.zeros(N)
     cdef int i
-
-    for i in range(N):
-        if X[i] > 0.5:
-            Y[i] = c_exp(X[i])
-        else:
-            Y[i] = 0
-
+    with nogil:
+        for i in range(N):
+            if X[i] > 0.5:
+                Y[i] = c_exp(X[i])
+            else:
+                Y[i] = 0
     return Y
+
 
 @boundscheck(False)
 def cython_parallel(double[:] X, int n_jobs):
@@ -63,21 +62,9 @@ def python_parallel(X, n_jobs):
     Y = np.zeros(N)
 
     X_split = np.split(X, n_jobs)
-    Y_split = np.split(Y, n_jobs)
-
-    args = zip(X_split, Y_split, [N for _ in range(n_jobs)])
 
     Parallel(n_jobs=n_jobs, backend='threading')(
-    delayed(_c_array_f_joblib)(
-    x, y, i/n_jobs) for x, y, i in args)
+    delayed(cython_loop)(
+    x) for x in X_split)
 
     return Y
-
-
-def _c_array_f_joblib(X, Y, N):
-    cython_loop(X) 
-    # for i in range(N):
-    #     if X[i] > 0.5:
-    #         Y[i] = c_exp(X[i])
-    #     else:
-    #         Y[i] = 0

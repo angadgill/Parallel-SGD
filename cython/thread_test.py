@@ -12,29 +12,35 @@ X = -1 + 2*np.random.rand(9e7)
 # a = numpy_array(X)
 # print "Time numpy_array:", time.time() - start_time
 
-start_time = time.time()
-a = python_loop(X)
-print "Time python_loop", time.time() - start_time
+# start_time = time.time()
+# a = python_loop(X)
+# print "Time python_loop", time.time() - start_time
 
 start_time = time.time()
 cython_loop(X)
 print "Time cython_loop:", time.time() - start_time
 
-for i in range(4):
-    start_time = time.time()
-    cython_parallel(X, i+1)
-    timei = time.time() - start_time
-    if i == 0:
-        time1 = timei
-    print "Time cython_parallel with %d workers: %f" % (i+1, time1/timei)
+num_procs = 4
+t_iter = 5
 
-for i in range(4):
+for i in range(num_procs):
     start_time = time.time()
-    b = python_parallel(X, i+1)
-    timei = time.time() - start_time
+    for _ in range(t_iter):
+        b = python_parallel(X, i+1)
+    timei = (time.time() - start_time)/t_iter
     if i == 0:
         time1 = timei
-    print "Time python_parallel with %d workers: %f" % (i+1, time1/timei)
+    print "python_parallel with %d workers. Time: %f, Speedup: %f" % (i+1, timei, time1/timei)
+
+
+for i in range(num_procs):
+    start_time = time.time()
+    for _ in range(t_iter):
+        cython_parallel(X, i+1)
+    timei = (time.time() - start_time)/t_iter
+    if i == 0:
+        time1 = timei
+    print "cython_parallel with %d workers. Time: %f, Speedup: %f" % (i+1, timei, time1/timei)
 
 
 # if sum(a-b) != 0:
